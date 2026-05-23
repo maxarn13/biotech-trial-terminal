@@ -60,31 +60,7 @@ A full-stack clinical trial tracker and NPV scenario modeler for biotech investo
 | Backend | Flask (single server — static files + API) |
 | Data | ClinicalTrials.gov API v2, SEC EDGAR XBRL (no API key needed) |
 
----
 
-## Getting Started
-
-### Requirements
-- Python 3.9+
-- pip
-
-### Install dependencies
-
-```bash
-pip install flask numpy
-```
-
-### Run
-
-```bash
-python scenario_api.py
-```
-
-Then open **http://localhost:5002** in your browser.
-
-That's it — no build step, no webpack, no Node required.
-
----
 
 ## Project Structure
 
