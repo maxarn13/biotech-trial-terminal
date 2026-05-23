@@ -2,7 +2,6 @@
 
 A full-stack clinical trial tracker and NPV scenario modeler for biotech investors. Pulls live data from ClinicalTrials.gov and SEC EDGAR — no paid data subscriptions or API keys required.
 
-![BTT Screenshot](https://github.com/maxarn13/biotech-trial-terminal/raw/main/preview.png)
 
 ---
 
