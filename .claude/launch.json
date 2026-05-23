@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "btt",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["scenario_api.py"],
+      "port": 5002
+    }
+  ]
+}
