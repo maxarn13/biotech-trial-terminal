@@ -88,6 +88,7 @@ def _hist(arr, bins=60):
 
 _SEC_UA       = 'BiotechTrialTerminal research@btt.local'  # SEC requires "AppName email" format
 _cik_map      = {}   # ticker → zero-padded CIK string, loaded once
+_name_map     = {}   # ticker → SEC legal name (title), loaded once
 _fin_cache    = {}   # ticker → financials dict
 
 def _load_cik_map():
@@ -99,7 +100,10 @@ def _load_cik_map():
     with urllib.request.urlopen(req, timeout=15) as r:
         raw = json.loads(r.read())
     for entry in raw.values():
-        _cik_map[entry['ticker'].upper()] = str(entry['cik_str']).zfill(10)
+        tk = entry['ticker'].upper()
+        _cik_map[tk] = str(entry['cik_str']).zfill(10)
+        if entry.get('title'):
+            _name_map[tk] = entry['title']
 
 def _latest_val(all_ns, ns_list, concept_list, unit='USD'):
     """Return the most-recent value (in millions) for the first matching concept."""
@@ -194,6 +198,24 @@ def sec_financials(ticker):
         _fin_cache[ticker] = result
         return jsonify(result)
 
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/sec/resolve/<ticker>', methods=['GET'])
+def sec_resolve(ticker):
+    """
+    Resolve a ticker to its SEC EDGAR legal name.
+    Used by the browser to look up unknown tickers without hitting EDGAR directly
+    (which is blocked by CORS in most browser contexts).
+    """
+    ticker = ticker.upper().strip()
+    try:
+        _load_cik_map()
+        title = _name_map.get(ticker)
+        if not title:
+            return jsonify({'error': 'ticker not found in SEC EDGAR'}), 404
+        return jsonify({'ticker': ticker, 'title': title})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

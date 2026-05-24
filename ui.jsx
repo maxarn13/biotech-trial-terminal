@@ -344,6 +344,16 @@ function CompanyDrawer({ ticker, watchlist, addToWatchlist, onClose, onAnalyze }
   const [loading, setLoading] = useState(true);
   const [fetchedCount, setFetchedCount] = useState(0);
   const [fins, setFins] = useState(null);   // SEC financials
+  const [retryKey, setRetryKey] = useState(0);       // bump to re-trigger fetch
+  const [sponsorInput, setSponsorInput] = useState(""); // manual sponsor entry
+
+  const handleSaveSponsor = () => {
+    const name = sponsorInput.trim();
+    if (!name) return;
+    window.CTAPI.saveCustomSponsor(ticker, name);
+    setSponsorInput("");
+    setRetryKey(function(k) { return k + 1; }); // re-run effect → re-fetch trials
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -364,7 +374,7 @@ function CompanyDrawer({ ticker, watchlist, addToWatchlist, onClose, onAnalyze }
       .then(function(d) { if (!cancelled && d && !d.error) setFins(d); })
       .catch(function() {});
     return function() { cancelled = true; };
-  }, [ticker]);
+  }, [ticker, retryKey]);
 
   const sponsors = (window.CTAPI.TICKER_TO_SPONSORS[ticker] || []).join(", ") || ticker;
   const inWl = (watchlist || []).includes(ticker);
@@ -470,9 +480,41 @@ function CompanyDrawer({ ticker, watchlist, addToWatchlist, onClose, onAnalyze }
               )}
             </div>
           )}
-          {!loading && compTrials.length === 0 && (
+          {!loading && compTrials.length === 0 && window.CTAPI.isKnownTicker(ticker) && (
             <div style={{ padding: 24, color: "var(--text-faint)", textAlign: "center", fontSize: 10 }}>
               No active trials found on CT.gov for this sponsor.
+            </div>
+          )}
+          {!loading && compTrials.length === 0 && !window.CTAPI.isKnownTicker(ticker) && (
+            <div style={{ padding: "20px 16px" }}>
+              <div style={{ fontSize: 9, color: "var(--amber)", marginBottom: 6, letterSpacing: 0.5, fontWeight: 600 }}>
+                ⚠ {ticker} NOT FOUND IN CT.GOV DATABASE
+              </div>
+              <div style={{ fontSize: 9, color: "var(--text-dim)", marginBottom: 8, lineHeight: 1.6 }}>
+                Enter the exact sponsor name as it appears on ClinicalTrials.gov to search for trials:
+              </div>
+              <div style={{ display: "flex", gap: 6 }}>
+                <input
+                  autoFocus
+                  value={sponsorInput}
+                  onChange={function(e) { setSponsorInput(e.target.value); }}
+                  onKeyDown={function(e) { if (e.key === "Enter") handleSaveSponsor(); if (e.key === "Escape") onClose(); }}
+                  placeholder="e.g. Vera Therapeutics"
+                  style={{
+                    flex: 1, background: "var(--bg)", border: "1px solid var(--amber)",
+                    color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 10,
+                    padding: "4px 8px", outline: "none",
+                  }}
+                />
+                <button onClick={handleSaveSponsor} style={{
+                  background: "var(--amber)", color: "#000", border: "none",
+                  fontFamily: "var(--font-mono)", fontSize: 9, padding: "4px 10px",
+                  cursor: "pointer", fontWeight: 700, letterSpacing: 0.5,
+                }}>SEARCH</button>
+              </div>
+              <div style={{ fontSize: 8, color: "var(--text-faint)", marginTop: 6 }}>
+                Saved permanently for this browser.
+              </div>
             </div>
           )}
           {!loading && compTrials.length > 0 && (

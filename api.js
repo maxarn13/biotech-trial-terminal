@@ -421,11 +421,27 @@ function secNameToSponsor(title) {
 // Given an unknown ticker, attempt to resolve it to a CT.gov sponsor search term.
 // Returns null if resolution fails.
 async function resolveUnknownTicker(ticker) {
+  // Try Flask proxy first — server-side fetch has no CORS restriction
+  try {
+    var res = await fetch('/api/sec/resolve/' + encodeURIComponent(ticker));
+    if (res.ok) {
+      var data = await res.json();
+      if (data && data.title) {
+        var name = secNameToSponsor(data.title);
+        if (name) {
+          TICKER_TO_SPONSORS[ticker] = [name];
+          SPONSOR_TO_TICKER[name.toLowerCase()] = ticker;
+          return name;
+        }
+      }
+    }
+  } catch (e) { /* proxy unavailable — fall through */ }
+
+  // Fallback: direct SEC EDGAR fetch (blocked by CORS in most browser contexts)
   var sec = await loadSecTickers();
   var title = sec[ticker];
   if (!title) return null;
   var name = secNameToSponsor(title);
-  // Cache the resolved name so subsequent calls skip the SEC fetch
   if (name) {
     TICKER_TO_SPONSORS[ticker] = [name];
     SPONSOR_TO_TICKER[name.toLowerCase()] = ticker;
