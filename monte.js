@@ -351,22 +351,54 @@ function inferFromTrial(trial) {
   // If we couldn't determine, assume a small/mid biotech (3 trials)
   if (nTrials < 1) nTrials = 3;
 
-  // Multiplier table: 1-trial company has ~2.5× the binary risk of a 12-trial company
+  // Concentration multiplier: captures what fraction of company value is this trial.
+  // Extended scale handles mega-cap pharma (60-100+ trials) which previously showed
+  // unrealistically large moves (a Pfizer Phase 3 failure ≠ −30% stock drop).
   var concMult;
-  if      (nTrials <= 1)  concMult = 2.50;
-  else if (nTrials <= 2)  concMult = 2.00;
-  else if (nTrials <= 3)  concMult = 1.65;
-  else if (nTrials <= 5)  concMult = 1.35;
-  else if (nTrials <= 8)  concMult = 1.15;
-  else if (nTrials <= 12) concMult = 1.00;
-  else if (nTrials <= 20) concMult = 0.75;
-  else if (nTrials <= 35) concMult = 0.55;
-  else                    concMult = 0.35; // large diversified pharma
+  if      (nTrials <= 1)   concMult = 1.80;
+  else if (nTrials <= 2)   concMult = 1.40;
+  else if (nTrials <= 3)   concMult = 1.10;
+  else if (nTrials <= 5)   concMult = 0.85;
+  else if (nTrials <= 8)   concMult = 0.65;
+  else if (nTrials <= 12)  concMult = 0.50;
+  else if (nTrials <= 20)  concMult = 0.35;
+  else if (nTrials <= 35)  concMult = 0.22;
+  else if (nTrials <= 60)  concMult = 0.13;
+  else if (nTrials <= 100) concMult = 0.07;
+  else                     concMult = 0.04;
 
-  // Scale each move; cap fail at −95% so the stock doesn't go below zero
+  // ── Competitive landscape: peak share as dominance / first-in-class proxy ──
+  // Rare-disease / high-share drugs (30-40% share) command dominant positions →
+  //   larger binary moves because there's minimal competitive offset.
+  // Crowded mass-market drugs (2-5% share, 5th-in-class) have incremental value →
+  //   dampened moves because the market is already partially served.
+  // Power 0.35 keeps the adjustment modest; cap [0.55, 1.60] prevents extremes.
+  var compMult = Math.min(1.60, Math.max(0.55, Math.pow(peakShare / 0.08, 0.35)));
+
+  // ── PoS-based asymmetric scaling ─────────────────────────────────────────
+  // The market prices in (prior_pos × drug_NPV). When data arrives:
+  //
+  //   Success: re-rates to full NPV → upside surprise ∝ (1 − pos) / pos
+  //            → moves are LARGER when PoS was LOW (unexpected success)
+  //
+  //   Failure: loses the priced-in probability-weighted NPV → downside surprise ∝ pos
+  //            → failure move is LARGER when PoS was HIGH (unexpected failure)
+  //
+  // Using power 0.55 to soften extremes at very low / very high PoS.
+  // Normalized to 1.0 at PoS = 0.50 (the "neutral" prior).
+  var posClamped       = Math.max(0.05, Math.min(0.95, cfg.prior_pos));
+  var successPosMult   = Math.pow(0.5 / posClamped, 0.55);  // >1 when PoS<50%, <1 when PoS>50%
+  var failPosMult      = Math.pow(posClamped / 0.5, 0.55);  // >1 when PoS>50%, <1 when PoS<50%
+
+  // Combined base scale for move magnitudes.
+  // Cap at 3.5 to prevent extreme stacking (e.g. single-asset rare-disease orphan).
+  var baseScale = Math.min(concMult * compMult, 3.5);
+
+  // Apply asymmetric PoS scaling: success and failure moves scale differently.
+  // Cap failure at −90% (some residual cash/pipeline value always remains).
   var scaledMoves = cfg.moves.map(function(m, i) {
-    var s = m * concMult;
-    return (i === 0) ? Math.max(-0.95, s) : s;
+    var s = m * baseScale * (i === 0 ? failPosMult : successPosMult);
+    return (i === 0) ? Math.max(-0.90, s) : s;
   });
 
   return {
@@ -392,6 +424,9 @@ function inferFromTrial(trial) {
     pcd: trial.pcd || null,
     nTrials: nTrials,
     concMult: concMult,
+    compMult: compMult,
+    successPosMult: successPosMult,
+    failPosMult: failPosMult,
   };
 }
 

@@ -770,6 +770,9 @@ function MonteSection({ trial }) {
           ["Modality mult",    params.modality ? params.modality.mult.toFixed(2) + "×" : "1.00×"],
           ["Pipeline trials",  params.nTrials + " loaded"],
           ["Conc. multiplier", params.concMult.toFixed(2) + "×"],
+          ["Competition mult", params.compMult != null ? params.compMult.toFixed(2) + "×" : "—"],
+          ["PoS↑ surprise",    params.successPosMult != null ? params.successPosMult.toFixed(2) + "×" : "—"],
+          ["PoS↓ surprise",    params.failPosMult    != null ? params.failPosMult.toFixed(2)    + "×" : "—"],
         ].map(([k, v]) => (
           <div key={k} style={{ display: "flex", justifyContent: "space-between",
                                  alignItems: "baseline", gap: 4 }}>
