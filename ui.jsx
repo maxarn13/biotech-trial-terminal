@@ -650,6 +650,48 @@ function CompanyDrawer({ ticker, watchlist, addToWatchlist, onClose, onAnalyze }
   );
 }
 
+// ────────────────────────── info tooltip ──────────────────────────
+
+function InfoTip({ content }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span
+      style={{ position: "relative", display: "inline-block", verticalAlign: "middle", marginLeft: 4 }}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      <span style={{
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        width: 11, height: 11, borderRadius: "50%",
+        border: "1px solid currentColor", color: "var(--text-faint)",
+        fontSize: 7, fontStyle: "normal", fontWeight: 700,
+        cursor: "default", lineHeight: "11px", userSelect: "none",
+      }}>i</span>
+      {show && (
+        <div style={{
+          position: "absolute",
+          bottom: "calc(100% + 8px)",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 238,
+          background: "var(--panel-3)",
+          border: "1px solid var(--border)",
+          borderRadius: 3,
+          padding: "8px 10px",
+          zIndex: 300,
+          pointerEvents: "none",
+          boxShadow: "0 6px 24px rgba(0,0,0,0.55)",
+          textAlign: "left",
+          letterSpacing: "normal",
+          fontFamily: "var(--font-mono)",
+        }}>
+          {content}
+        </div>
+      )}
+    </span>
+  );
+}
+
 // ────────────────────────── trial drawer ──────────────────────────
 
 function MonteSection({ trial }) {
@@ -700,20 +742,71 @@ function MonteSection({ trial }) {
       </h4>
 
       {/* PoS + expected move hero row */}
-      <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--border)", marginBottom: 10 }}>
-        {[
-          { label: "P(SUCCESS)",    val: fmtPct(pos, 1),
-            c: pos > 0.55 ? "var(--green)" : pos > 0.35 ? "var(--amber)" : "var(--red)" },
-          { label: "EXP. MOVE",     val: moveSign(expected_move), c: moveColor(expected_move) },
-          { label: "RNPV",          val: fmtMoney(Math.round(dcf.rnpv)), c: "var(--accent)" },
-          { label: "PEAK SALES",    val: fmtMoney(Math.round(dcf.peakSales)), c: "var(--text)" },
-        ].map(s => (
-          <div key={s.label} style={{ flex: 1, textAlign: "center", padding: "8px 2px" }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: s.c, lineHeight: 1 }}>{s.val}</div>
-            <div style={{ fontSize: 8, color: "var(--text-faint)", letterSpacing: 1.2, marginTop: 3 }}>{s.label}</div>
+      {(() => {
+        const outcomeLabels = ["FAIL", "MARGINAL", "SOLID", "BLOWOUT"];
+        const outcomeColors = ["var(--red)", "var(--amber)", "var(--accent)", "var(--green)"];
+        const expMoveInfo = (
+          <div style={{ fontSize: 8 }}>
+            <div style={{ fontWeight: 700, color: "var(--text)", fontSize: 9, marginBottom: 4 }}>
+              Expected Move
+            </div>
+            <div style={{ color: "var(--text-faint)", marginBottom: 6, lineHeight: 1.5 }}>
+              Probability-weighted average of all outcome scenarios.
+            </div>
+            <div style={{ marginBottom: 8 }}>
+              {dist.map(function(p, i) {
+                const contrib = p * mc.moves[i];
+                return (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
+                    <span style={{ color: outcomeColors[i], width: 52, fontSize: 8 }}>{outcomeLabels[i]}</span>
+                    <span style={{ color: "var(--text-dim)", width: 24, textAlign: "right" }}>{(p*100).toFixed(0)}%</span>
+                    <span style={{ color: "var(--text-faint)" }}>×</span>
+                    <span style={{ color: moveColor(mc.moves[i]), width: 36, textAlign: "right" }}>{moveSign(mc.moves[i])}</span>
+                    <span style={{ color: "var(--text-faint)" }}>=</span>
+                    <span style={{ color: moveColor(contrib), fontWeight: 700, width: 34, textAlign: "right" }}>{moveSign(contrib)}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 6 }}>
+              <div style={{ color: "var(--text-faint)", marginBottom: 4 }}>Scaling factors applied to base moves:</div>
+              {[
+                ["Concentration (" + params.nTrials + " trials)", params.concMult.toFixed(2) + "×"],
+                ["Competition (" + fmtPct(params.peakShare, 0) + " mkt share)", params.compMult != null ? params.compMult.toFixed(2) + "×" : "—"],
+                ["PoS surprise — success", params.successPosMult != null ? params.successPosMult.toFixed(2) + "×" : "—"],
+                ["PoS surprise — failure", params.failPosMult    != null ? params.failPosMult.toFixed(2)    + "×" : "—"],
+              ].map(function([k, v]) { return (
+                <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 6, marginBottom: 2 }}>
+                  <span style={{ color: "var(--text-faint)" }}>{k}</span>
+                  <span style={{ color: "var(--accent)", fontWeight: 700 }}>{v}</span>
+                </div>
+              ); })}
+            </div>
           </div>
-        ))}
-      </div>
+        );
+        const heroItems = [
+          { label: "P(SUCCESS)", val: fmtPct(pos, 1),
+            c: pos > 0.55 ? "var(--green)" : pos > 0.35 ? "var(--amber)" : "var(--red)" },
+          { label: "EXP. MOVE",  val: moveSign(expected_move), c: moveColor(expected_move), info: expMoveInfo },
+          { label: "RNPV",       val: fmtMoney(Math.round(dcf.rnpv)), c: "var(--accent)" },
+          { label: "PEAK SALES", val: fmtMoney(Math.round(dcf.peakSales)), c: "var(--text)" },
+        ];
+        return (
+          <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--border)", marginBottom: 10 }}>
+            {heroItems.map(function(s) { return (
+              <div key={s.label} style={{ flex: 1, textAlign: "center", padding: "8px 2px" }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: s.c, lineHeight: 1 }}>{s.val}</div>
+                <div style={{ fontSize: 8, color: "var(--text-faint)", letterSpacing: 1.2, marginTop: 3,
+                              display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {s.label}
+                  {s.info && <InfoTip content={s.info} />}
+                </div>
+              </div>
+            ); })}
+          </div>
+        );
+      })()}
+
 
       {/* Outcome distribution bar */}
       <div style={{ fontSize: 8, color: "var(--text-faint)", letterSpacing: 1.5, marginBottom: 5 }}>
