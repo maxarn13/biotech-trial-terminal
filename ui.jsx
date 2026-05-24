@@ -107,6 +107,14 @@ function Nav({ tab, onTab, onSelectTrial, trials, addTrial, onSelectCompany }) {
       tryAdd(t.ticker, label);
     }
 
+    // 3. Direct ticker lookup — if the query looks like a ticker symbol and
+    //    isn't already in the results, always offer it as a direct company open.
+    //    This handles any ticker not in any static map and not yet in the watchlist.
+    const upperQ = needle.toUpperCase().trim();
+    if (/^[A-Z]{1,6}$/.test(upperQ) && !seen.has(upperQ)) {
+      tickerMatches.unshift({ ticker: upperQ, sponsors: null, direct: true });
+    }
+
     // Match against loaded trials
     const localTrials = (trials || [])
       .filter(t =>
@@ -205,16 +213,21 @@ function Nav({ tab, onTab, onSelectTrial, trials, addTrial, onSelectCompany }) {
                     {r.ticker}
                   </span>
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis", display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ color: delisted ? "var(--text-faint)" : undefined }}>{r.sponsors}</span>
-                    {delisted && (
-                      <span style={{ fontSize: 7, letterSpacing: 1, color: "var(--red)",
-                                     border: "1px solid var(--red)", padding: "1px 4px", flexShrink: 0 }}>
-                        DELISTED
-                      </span>
-                    )}
+                    {r.direct
+                      ? <span style={{ color: "var(--text-faint)", fontStyle: "italic" }}>open company page</span>
+                      : <>
+                          <span style={{ color: delisted ? "var(--text-faint)" : undefined }}>{r.sponsors}</span>
+                          {delisted && (
+                            <span style={{ fontSize: 7, letterSpacing: 1, color: "var(--red)",
+                                           border: "1px solid var(--red)", padding: "1px 4px", flexShrink: 0 }}>
+                              DELISTED
+                            </span>
+                          )}
+                        </>
+                    }
                   </span>
                   <span className="ind" style={{ color: delisted ? "var(--text-faint)" : "var(--accent)", fontSize: 9 }}>
-                    {delisted ? "ARCH →" : "VIEW →"}
+                    {r.direct ? "OPEN →" : delisted ? "ARCH →" : "VIEW →"}
                   </span>
                 </div>
               );
