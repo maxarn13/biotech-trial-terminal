@@ -358,7 +358,7 @@ def run():
     op   = float(np.clip(d.get('opex_pct',     0.30), 0.01, 0.80))
     tx   = float(np.clip(d.get('tax_rate',     0.21), 0.05, 0.45))
     N    = int(np.clip(d.get('n_sim',       10000),  500, 50000))
-    cy   = int(d.get('current_year',  2026))
+    cy   = int(d.get('current_year',  datetime.now().year))
 
     ytl = max(0, ly - cy)
     pl  = max(1, pe - ly)

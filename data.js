@@ -1,20 +1,32 @@
-// data.js — static seed data (watchlist, activity feed, color maps)
+// data.js — static seed data (watchlist, color maps)
 
 // Default watchlist — tickers only; full trial data comes from CT.gov
 window.WATCHLIST = ["PASG", "DNLI", "ALEC", "PRAX", "CADL", "RVMD", "IPHA", "BIIB", "SAGE", "MRNA"];
 
-window.ACTIVITY = [
-  { t: "08:42", ticker: "PASG", kind: "STATUS",  msg: "PBFT02 — Cohort 3 dose escalation cleared by DSMB (Cohort 4 opens Q1)", impact: "POS" },
-  { t: "08:31", ticker: "CADL", kind: "MILE",    msg: "CAN-2409 BR-PDAC — last patient last visit confirmed; topline guided to May", impact: "POS" },
-  { t: "07:58", ticker: "RVMD", kind: "ENROLL",  msg: "RASolute 302 — 312/460 enrolled, +14% vs internal model", impact: "POS" },
-  { t: "07:12", ticker: "ALEC", kind: "FILE",    msg: "INFRONT-3 — SAP amendment posted; primary analysis window unchanged", impact: "NEU" },
-  { t: "06:40", ticker: "IPHA", kind: "ENROLL",  msg: "IPH-031 — site activation paused at 3 EU sites pending CTA refresh", impact: "NEG" },
-  { t: "06:22", ticker: "DNLI", kind: "PUB",     msg: "DNL310 (Hunter) — Lancet Neurology paper accepted; pre-print live", impact: "POS" },
-  { t: "23:14", ticker: "SAGE", kind: "STATUS",  msg: "DIMENSION terminated; SAGE-718 program discontinued", impact: "NEG" },
-  { t: "22:08", ticker: "PRAX", kind: "GUID",    msg: "Essential1 topline reaffirmed for Q2 2026", impact: "NEU" },
-  { t: "21:55", ticker: "MRNA", kind: "ENROLL",  msg: "INTerpath-001 — site activation in JP cleared (PMDA)", impact: "POS" },
-  { t: "21:30", ticker: "BIIB", kind: "MILE",    msg: "CELIA — dosing complete in 99% of treatment arm", impact: "POS" },
-];
+// Tickers that are no longer publicly traded (acquired, merged, or bankrupt).
+// Used by the UI to show a DELISTED badge where the ticker appears.
+window.DELISTED_TICKERS = new Set([
+  "HZNP",  // Horizon Therapeutics — acquired by Amgen, 2023
+  "IMGN",  // ImmunoGen — acquired by AbbVie, 2024
+  "SGEN",  // Seagen — acquired by Pfizer, 2023
+  "EPZM",  // Epizyme — acquired by Ipsen, 2022
+  "MIRA",  // Mirati Therapeutics — acquired by BMS, 2024
+  "CERE",  // Cerevel Therapeutics — acquired by AbbVie, 2024
+  "KDNY",  // Chinook Therapeutics — acquired by Novartis, 2023
+  "KRTX",  // Karuna Therapeutics — acquired by BMS, 2024
+  "PRVB",  // Provention Bio — acquired by Sanofi, 2023
+  "IMGO",  // Imago BioSciences — acquired by Merck, 2023
+  "ISEE",  // Iveric Bio — acquired by Astellas, 2023
+  "ALPN",  // Alpine Immune Sciences — acquired by Vertex, 2024
+  "SAGE",  // Sage Therapeutics — acquired by Biogen, 2023
+  "RDUS",  // Radius Health — went private, 2022
+  "ACHC",  // Achaogen — bankruptcy, 2019
+  "CLVT",  // Clovis Oncology — bankruptcy, 2022
+  "GRPH",  // Graphite Bio — acquired by Kamau Therapeutics, 2023
+  "AVEO",  // AVEO Pharmaceuticals — acquired by LG Chem, 2022
+  "JNCE",  // Jounce Therapeutics — merged with Redx Pharma, 2024
+  "IMAB",  // I-Mab — delisted from NASDAQ, 2024
+]);
 
 window.PHASES = ["1", "1/2", "1b", "early 1", "2", "2b", "3"];
 

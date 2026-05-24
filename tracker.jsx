@@ -236,6 +236,12 @@ function WatchlistPanel({ watchlist, trials, selected, onSelect, onAdd, onRemove
               <div>
                 <span className="tk" style={{ color: selected === tk ? "var(--accent)" : "var(--text)", fontWeight: 600, fontSize: 11 }}>{tk}</span>
                 {hasUpcoming && <span style={{ marginLeft: 6, fontSize: 8, color: "var(--green)", letterSpacing: 1 }}>●</span>}
+                {(window.DELISTED_TICKERS||new Set()).has(tk) && (
+                  <span style={{ marginLeft: 5, fontSize: 7, letterSpacing: 1, color: "var(--red)",
+                                 border: "1px solid var(--red)", padding: "1px 3px", verticalAlign: "middle" }}>
+                    DELISTED
+                  </span>
+                )}
                 <div style={{ fontSize: 9, color: "var(--text-faint)", letterSpacing: 0.5 }}>
                   {tkTrials.length} trial{tkTrials.length !== 1 ? "s" : ""}
                 </div>

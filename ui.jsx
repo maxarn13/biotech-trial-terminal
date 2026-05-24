@@ -171,15 +171,30 @@ function Nav({ tab, onTab, onSelectTrial, trials, addTrial, onSelectCompany }) {
           <div className="autocomplete">
             {/* Ticker matches */}
             {results && results.tickers.length > 0 && <div className="ac-section">TICKERS</div>}
-            {results && results.tickers.map((r, i) => (
-              <div key={r.ticker}
-                   className={"ac-row " + (sel === i ? "sel" : "")}
-                   onMouseDown={() => choose({ kind: "ticker", ...r })}>
-                <span className="tk">{r.ticker}</span>
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{r.sponsors}</span>
-                <span className="ind" style={{ color: "var(--accent)", fontSize: 9 }}>VIEW →</span>
-              </div>
-            ))}
+            {results && results.tickers.map((r, i) => {
+              const delisted = (window.DELISTED_TICKERS || new Set()).has(r.ticker);
+              return (
+                <div key={r.ticker}
+                     className={"ac-row " + (sel === i ? "sel" : "")}
+                     onMouseDown={() => choose({ kind: "ticker", ...r })}>
+                  <span className="tk" style={{ color: delisted ? "var(--text-dim)" : undefined }}>
+                    {r.ticker}
+                  </span>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: delisted ? "var(--text-faint)" : undefined }}>{r.sponsors}</span>
+                    {delisted && (
+                      <span style={{ fontSize: 7, letterSpacing: 1, color: "var(--red)",
+                                     border: "1px solid var(--red)", padding: "1px 4px", flexShrink: 0 }}>
+                        DELISTED
+                      </span>
+                    )}
+                  </span>
+                  <span className="ind" style={{ color: delisted ? "var(--text-faint)" : "var(--accent)", fontSize: 9 }}>
+                    {delisted ? "ARCH →" : "VIEW →"}
+                  </span>
+                </div>
+              );
+            })}
             {/* Local trial matches */}
             {results && results.trials.length > 0 && <div className="ac-section">LOADED TRIALS</div>}
             {results && results.trials.map((r, i) => {
@@ -372,11 +387,19 @@ function CompanyDrawer({ ticker, watchlist, addToWatchlist, onClose, onAnalyze }
             <div className="nct" style={{ color: "var(--text-faint)", fontSize: 9, letterSpacing: 1.5 }}>
               COMPANY OVERVIEW · CT.GOV LIVE
             </div>
-            <div className="drug" style={{ marginTop: 4 }}>
-              <span className="ticker">{ticker}</span>
-              <span style={{ color: "var(--text-dim)", fontSize: 11, marginLeft: 8 }}>
+            <div className="drug" style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <span className="ticker" style={{ color: (window.DELISTED_TICKERS||new Set()).has(ticker) ? "var(--text-dim)" : undefined }}>
+                {ticker}
+              </span>
+              <span style={{ color: "var(--text-dim)", fontSize: 11 }}>
                 {(sponsors.split(",")[0] || "").trim()}
               </span>
+              {(window.DELISTED_TICKERS||new Set()).has(ticker) && (
+                <span style={{
+                  fontSize: 8, letterSpacing: 1.5, color: "var(--red)",
+                  border: "1px solid var(--red)", padding: "2px 6px", fontWeight: 700,
+                }}>DELISTED</span>
+              )}
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
