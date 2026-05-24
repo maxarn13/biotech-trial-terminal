@@ -79,23 +79,32 @@ function Nav({ tab, onTab, onSelectTrial, trials, addTrial, onSelectCompany }) {
       return window.EXTRA_COMPANIES?.[tk] || "";
     };
 
-    // Merge both maps — TICKER_TO_SPONSORS first (already-resolved), then EXTRA_COMPANIES
+    // Merge all three sources: TICKER_TO_SPONSORS, EXTRA_COMPANIES, loaded trials
+    // Priority: static maps first (best names), then trials (covers watchlist
+    // tickers not in any map, e.g. small/new companies the user added manually).
     const seen = new Set();
     const tickerMatches = [];
+
+    const tryAdd = (tk, label) => {
+      if (seen.has(tk) || tickerMatches.length >= 6) return;
+      seen.add(tk);
+      const matchesTicker  = tk.toLowerCase().includes(needle);
+      const matchesSponsor = label.toLowerCase().includes(needle);
+      if (matchesTicker || matchesSponsor) tickerMatches.push({ ticker: tk, sponsors: label });
+    };
+
+    // 1. Static maps
     const allTickers = [
       ...Object.keys(window.CTAPI?.TICKER_TO_SPONSORS || {}),
       ...Object.keys(window.EXTRA_COMPANIES || {}),
     ];
-    for (const tk of allTickers) {
-      if (seen.has(tk)) continue;
-      seen.add(tk);
-      const label = sponsorLabel(tk);
-      const matchesTicker  = tk.toLowerCase().includes(needle);
-      const matchesSponsor = label.toLowerCase().includes(needle);
-      if (matchesTicker || matchesSponsor) {
-        tickerMatches.push({ ticker: tk, sponsors: label });
-        if (tickerMatches.length >= 6) break;
-      }
+    for (const tk of allTickers) tryAdd(tk, sponsorLabel(tk));
+
+    // 2. Loaded trials — catches any watchlist ticker not in either map
+    for (const t of (trials || [])) {
+      if (!t.ticker) continue;
+      const label = sponsorLabel(t.ticker) || t.sponsor || t.ticker;
+      tryAdd(t.ticker, label);
     }
 
     // Match against loaded trials
