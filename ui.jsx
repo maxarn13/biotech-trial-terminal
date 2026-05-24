@@ -67,21 +67,36 @@ function Nav({ tab, onTab, onSelectTrial, trials, addTrial, onSelectCompany }) {
     { id: "modeler",   label: "Scenario",      key: "F4" },
   ];
 
-  // Local search: tickers from TICKER_TO_SPONSORS + loaded trials
+  // Local search: tickers from TICKER_TO_SPONSORS + EXTRA_COMPANIES + loaded trials
   const results = useMemo(() => {
     if (!q.trim()) return null;
     const needle = q.toLowerCase().trim();
-    const upperNeedle = needle.toUpperCase();
 
-    // Match against TICKER_TO_SPONSORS keys and sponsor names
-    const tickerMatches = Object.keys(window.CTAPI?.TICKER_TO_SPONSORS || {})
-      .filter(tk => {
-        if (tk.toLowerCase().includes(needle)) return true;
-        const sponsors = window.CTAPI.TICKER_TO_SPONSORS[tk] || [];
-        return sponsors.some(s => s.toLowerCase().includes(needle));
-      })
-      .slice(0, 5)
-      .map(tk => ({ ticker: tk, sponsors: (window.CTAPI.TICKER_TO_SPONSORS[tk] || []).join(", ") }));
+    // Helper: get best display name for a ticker from either map
+    const sponsorLabel = (tk) => {
+      const fromApi = window.CTAPI?.TICKER_TO_SPONSORS?.[tk];
+      if (fromApi && fromApi.length) return fromApi.join(", ");
+      return window.EXTRA_COMPANIES?.[tk] || "";
+    };
+
+    // Merge both maps — TICKER_TO_SPONSORS first (already-resolved), then EXTRA_COMPANIES
+    const seen = new Set();
+    const tickerMatches = [];
+    const allTickers = [
+      ...Object.keys(window.CTAPI?.TICKER_TO_SPONSORS || {}),
+      ...Object.keys(window.EXTRA_COMPANIES || {}),
+    ];
+    for (const tk of allTickers) {
+      if (seen.has(tk)) continue;
+      seen.add(tk);
+      const label = sponsorLabel(tk);
+      const matchesTicker  = tk.toLowerCase().includes(needle);
+      const matchesSponsor = label.toLowerCase().includes(needle);
+      if (matchesTicker || matchesSponsor) {
+        tickerMatches.push({ ticker: tk, sponsors: label });
+        if (tickerMatches.length >= 6) break;
+      }
+    }
 
     // Match against loaded trials
     const localTrials = (trials || [])
