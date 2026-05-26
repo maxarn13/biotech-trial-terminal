@@ -106,8 +106,3 @@ A full-stack clinical trial tracker and NPV scenario modeler for biotech investo
 | `/` | Focus search bar |
 | `Esc` | Close drawer / clear selection |
 
----
-
-## License
-
-MIT
